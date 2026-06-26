@@ -1,6 +1,5 @@
-game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "تنبيه",
-    Text = "تم حذف هذا السكربت لايكون مسوي نفسك فاك تشفير السكربت؟ يلا عوافي",
+    Text = "تم حذف هذا السكربت 🙀",
     Duration = 15
 })
 
