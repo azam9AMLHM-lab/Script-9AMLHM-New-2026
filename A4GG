@@ -1,6 +1,1 @@
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "تنبيه",
-    Text = "تم حذف هذا السكربت لايكون مسوي نفسك فاك تشفير السكربت؟ يلا عوافي",
-    Duration = 15
-})
-
+تم حذف السكربت يا قوي 🙀
