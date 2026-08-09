@@ -37,7 +37,7 @@ local re = ReplicatedStorage:WaitForChild("RE", 10)
 -- تحديد رتبة ومظهر التاق لكل لاعب
 local function getRoleInfo(plr)
     if ScriptOwners[plr.UserId] then
-        return " صانع السكربت", Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 170, 0) -- ذهبي
+        return "صانع السكربت", Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 170, 0) -- ذهبي
     elseif ScriptAdmins[plr.UserId] then
         return "ادمن", Color3.fromRGB(255, 50, 50), Color3.fromRGB(150, 0, 0) -- أحمر
     else
