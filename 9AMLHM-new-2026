@@ -57,9 +57,9 @@ local function removeTag(plr)
     end
 end
 
--- إنشاء التاق فوق رأس اللاعب
+-- إنشاء التاق فوق رأس اللاعب (متاح للجميع لكي يرى الجميع)
 local function createTag(plr)
-    if not getgenv().ShowTags then return end
+    -- تم إزالة شرط getgenv().ShowTags الخاص باللاعب المحلي ليتمكن الكل من الرؤية، والتحكم صار عاماً
     if not scriptUsers[plr.UserId] then return end
     if not plr.Character then return end
 
@@ -106,8 +106,14 @@ local function createTag(plr)
     activeTags[plr] = gui
 end
 
--- نظام مراقبة البايو لاكتشاف أي لاعب آخر يشغل السكربت
+-- نظام مراقبة البايو لاكتشاف أي لاعب آخر يشغل السكربت تلقائياً
 local function watchPlayerBio(plr)
+    -- المطورين والادمنز يتم تحديدهم تلقائياً فوراً بدون الحاجة لقراءة البايو
+    if ScriptOwners[plr.UserId] or ScriptAdmins[plr.UserId] then
+        scriptUsers[plr.UserId] = true
+        if plr.Character then createTag(plr) end
+    end
+
     local bag = plr:WaitForChild("PlayersBag", 10)
     if not bag then return end
 
@@ -126,7 +132,8 @@ local function watchPlayerBio(plr)
 
     plr.CharacterAdded:Connect(function()
         task.wait(0.5)
-        if scriptUsers[plr.UserId] then
+        if scriptUsers[plr.UserId] or ScriptOwners[plr.UserId] or ScriptAdmins[plr.UserId] then
+            scriptUsers[plr.UserId] = true
             createTag(plr)
         end
     end)
@@ -285,16 +292,15 @@ end})
 -- 2. تبويب الرتب والمراقبة
 ---------------------------------------------------------
 local RanksTab = Window:MakeTab({"الرتب والمراقبة", "shield"})
-getgenv().ShowTags = true
 
 RanksTab:AddToggle({
     Name = "كشف مستخدمين السكربت",
     Default = true,
     Callback = function(Value)
-        getgenv().ShowTags = Value
         if Value then
             for _, plr in ipairs(Players:GetPlayers()) do
-                if scriptUsers[plr.UserId] then
+                if scriptUsers[plr.UserId] or ScriptOwners[plr.UserId] or ScriptAdmins[plr.UserId] then
+                    scriptUsers[plr.UserId] = true
                     createTag(plr)
                 end
             end
