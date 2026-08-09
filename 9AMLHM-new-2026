@@ -18,6 +18,7 @@ local rainbowBioSpeed = 5
 
 local activeTags = {}
 local scriptUsers = {}
+local customRanks = {}
 
 -- قائمة الرتب بحسب UserId
 local ScriptOwners = {
@@ -36,7 +37,9 @@ local re = ReplicatedStorage:WaitForChild("RE", 10)
 
 -- تحديد رتبة ومظهر التاق لكل لاعب
 local function getRoleInfo(plr)
-    if ScriptOwners[plr.UserId] then
+    if customRanks[plr.UserId] then
+        return customRanks[plr.UserId], Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 170, 0)
+    elseif ScriptOwners[plr.UserId] then
         return "صانع السكربت", Color3.fromRGB(255, 215, 0), Color3.fromRGB(255, 170, 0) -- ذهبي
     elseif ScriptAdmins[plr.UserId] then
         return "ادمن", Color3.fromRGB(255, 50, 50), Color3.fromRGB(150, 0, 0) -- أحمر
@@ -59,7 +62,6 @@ end
 
 -- إنشاء التاق فوق رأس اللاعب (متاح للجميع لكي يرى الجميع)
 local function createTag(plr)
-    -- تم إزالة شرط getgenv().ShowTags الخاص باللاعب المحلي ليتمكن الكل من الرؤية، والتحكم صار عاماً
     if not scriptUsers[plr.UserId] then return end
     if not plr.Character then return end
 
@@ -108,7 +110,6 @@ end
 
 -- نظام مراقبة البايو لاكتشاف أي لاعب آخر يشغل السكربت تلقائياً
 local function watchPlayerBio(plr)
-    -- المطورين والادمنز يتم تحديدهم تلقائياً فوراً بدون الحاجة لقراءة البايو
     if ScriptOwners[plr.UserId] or ScriptAdmins[plr.UserId] then
         scriptUsers[plr.UserId] = true
         if plr.Character then createTag(plr) end
@@ -121,8 +122,13 @@ local function watchPlayerBio(plr)
     if not bio then return end
 
     local function checkBio()
-        if string.find(tostring(bio.Value), SCRIPT_BIO_TAG) or string.find(tostring(bio.Value), "9AMLHM_USER") or ScriptOwners[plr.UserId] or ScriptAdmins[plr.UserId] then
+        local val = tostring(bio.Value)
+        if string.find(val, SCRIPT_BIO_TAG) or string.find(val, "9AMLHM_USER") or ScriptOwners[plr.UserId] or ScriptAdmins[plr.UserId] then
             scriptUsers[plr.UserId] = true
+            local rankMatch = string.match(val, "%[Rank:(.-)%]")
+            if rankMatch then
+                customRanks[plr.UserId] = rankMatch
+            end
             createTag(plr)
         end
     end
@@ -139,17 +145,30 @@ local function watchPlayerBio(plr)
     end)
 end
 
--- تفعيل البايو لللاعب الحالي لإعلام الآخرين بتشغيله للسكربت
+-- تفعيل البايو لللاعب الحالي لإعلام الآخرين بتشغيله للسكربت وضهور التاق فوراً
 local function SetRPProfile()
+    scriptUsers[LocalPlayer.UserId] = true
     pcall(function()
         re:WaitForChild("1RPNam1eTex1t"):FireServer("RolePlayName", "9AMLHM hub")
         re:WaitForChild("1RPNam1eColo1r"):FireServer("PickingRPNameColor", Color3.fromRGB(100, 200, 255))
         re:WaitForChild("1RPNam1eTex1t"):FireServer("RolePlayBio", SCRIPT_BIO_TAG)
         re:WaitForChild("1RPNam1eColo1r"):FireServer("PickingRPBioColor", Color3.fromRGB(20, 20, 20))
     end)
+    task.spawn(function()
+        task.wait(0.5)
+        if LocalPlayer.Character then
+            createTag(LocalPlayer)
+        end
+    end)
 end
 
 SetRPProfile()
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    scriptUsers[LocalPlayer.UserId] = true
+    createTag(LocalPlayer)
+end)
 
 for _, plr in ipairs(Players:GetPlayers()) do
     watchPlayerBio(plr)
@@ -161,6 +180,7 @@ end)
 
 Players.PlayerRemoving:Connect(function(plr)
     scriptUsers[plr.UserId] = nil
+    customRanks[plr.UserId] = nil
     removeTag(plr)
 end)
 
@@ -311,6 +331,25 @@ RanksTab:AddToggle({
         end
     end
 })
+
+-- زر تغيير الرتبة يظهر حصرياً لصانع السكربت فقط
+if ScriptOwners[LocalPlayer.UserId] then
+    RanksTab:AddSection({"إدارة رتبة الصانع"})
+    local ranksList = {"صانع مطور", "ادمن", "VIP", "عضو", "عادي", "ضعيف", "صملاوي", "اقوى صملاوي", "خطير"}
+    RanksTab:AddDropdown({
+        Name = "تغيير رتبة الصانع",
+        Default = customRanks[LocalPlayer.UserId] or "صانع السكربت",
+        Options = ranksList,
+        Callback = function(selectedRank)
+            customRanks[LocalPlayer.UserId] = selectedRank
+            pcall(function()
+                local newBio = SCRIPT_BIO_TAG .. " [Rank:" .. selectedRank .. "]"
+                re:WaitForChild("1RPNam1eTex1t"):FireServer("RolePlayBio", newBio)
+            end)
+            createTag(LocalPlayer)
+        end
+    })
+end
 
 ---------------------------------------------------------
 -- 3. تبويب الأوامر
